@@ -1,0 +1,48 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+# Load dataset
+data = pd.read_csv('/50_Startups.csv')
+
+# Display the first few rows
+print(data.head())
+
+# Check for missing values and handle them if necessary
+print(data.isnull().sum())
+
+# Assume 'success' column is encoded as 0 for failure and 1 for success; if not, encode it accordingly
+data['success'] = data['success'].map({'Failed': 0, 'Succeeded': 1})  # Adjust this mapping based on your dataset
+
+# Preprocess data
+# One-hot encode categorical features (assuming 'State' is the categorical column)
+encoder = OneHotEncoder(sparse=False)
+state_encoded = encoder.fit_transform(data[['State']])
+state_df = pd.DataFrame(state_encoded, columns=encoder.get_feature_names_out(['State']))
+
+# Combine the encoded features with the original dataset
+data = pd.concat([data.drop('State', axis=1), state_df], axis=1)
+
+# Define features and target variable
+X = data.drop('success', axis=1)
+y = data['success']
+
+# Split data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train the model
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Make predictions
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+report = classification_report(y_test, y_pred)
+
+print(f'Accuracy: {accuracy:.2f}')
+print('Classification Report:')
+print(report)
